@@ -1,5 +1,6 @@
 package com.management.todo.service.impl;
 
+import com.management.todo.dto.LoginDTO;
 import com.management.todo.dto.RegisterDTO;
 import com.management.todo.entity.Role;
 import com.management.todo.entity.User;
@@ -9,6 +10,10 @@ import com.management.todo.repository.UserRepository;
 import com.management.todo.service.AuthService;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -22,17 +27,18 @@ public class AuthServiceImpl implements AuthService {
     private UserRepository userRepository;
     private RoleRepository roleRepository;
     private PasswordEncoder passwordEncoder;
+    private AuthenticationManager authenticationManager;
 
     @Override
     public String register(RegisterDTO registerDTO) {
 
         //check username is already exist
-        if(userRepository.existByUserName(registerDTO.getUserName())){
+        if(userRepository.existsByUserName(registerDTO.getUserName())){
             throw new TodoAPIException(HttpStatus.BAD_REQUEST, "Username is already exists!!");
         }
 
         //check email is already exist
-        if(userRepository.existsByEmil(registerDTO.getEmail())){
+        if(userRepository.existsByEmail(registerDTO.getEmail())){
             throw  new TodoAPIException(HttpStatus.BAD_REQUEST, "Email is already exists!!");
         }
 
@@ -54,5 +60,19 @@ public class AuthServiceImpl implements AuthService {
 
 
         return "User Registered Successfully!!!";
+    }
+
+    @Override
+    public String login(LoginDTO loginDTO) {
+
+        Authentication authenticate = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                loginDTO.getUserNameOrEmail(),
+                loginDTO.getPassword()
+        ));
+
+        System.out.println(loginDTO);
+
+        SecurityContextHolder.getContext().setAuthentication(authenticate);
+        return "User logged-in successfully!!";
     }
 }
